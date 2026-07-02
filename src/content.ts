@@ -100,16 +100,27 @@ function injectButton(url: string) {
 
   Object.assign(btn.style, {
     position: "fixed",
-    top: "10px",
-    right: "10px",
+    top: "60px",
+    right: "45px",
     zIndex: "99999",
     padding: "8px 16px",
-    backgroundColor: "#007acc",
+    backgroundColor: "rgb(81, 103, 138)",
     color: "#fff",
-    borderRadius: "4px",
+    borderRadius: "3px",
     textDecoration: "none",
-    fontWeight: "bold",
+    fontWeight: 300,
+    fontSize: 14,
     boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease-in",
+  });
+
+  btn.addEventListener("mouseenter", () => {
+    btn.style.backgroundColor = "rgb(83, 172, 227)";
+  });
+
+  btn.addEventListener("mouseleave", () => {
+    btn.style.backgroundColor = "rgb(81, 103, 138)";
   });
 
   container.appendChild(btn);
