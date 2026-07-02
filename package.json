@@ -1,0 +1,19 @@
+{
+  "name": "ingeniux-cms-live-viewer-extension",
+  "description": "Browser extension that adds a “View Live” link inside Ingeniux CMS, dynamically resolving the current asset or page and opening it on the correct publishing target.",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "compile": "tsc --noEmit",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "@types/webextension-polyfill": "^0.10.0",
+    "typescript": "~5.6.3",
+    "vite": "^5.0.0",
+    "vite-plugin-web-extension": "^4.0.0",
+    "webextension-polyfill": "^0.10.0"
+  }
+}

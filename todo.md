@@ -1,0 +1,3 @@
+- [ ] Make dynamic and work with any instance of Ingeniux. e.g. base ingeniuxondemand.com
+- [ ] Allow users to setup different pubtargets and live sites to map to.
+- [ ] Update logos.
