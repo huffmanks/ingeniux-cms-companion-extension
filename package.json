@@ -10,7 +10,7 @@
     "dev:chrome": "vite --browser chrome",
     "dev:firefox": "vite --browser firefox",
     "build": "pnpm compile && vite build",
-    "zip": "zip -r ingeniux-cms-live-viewer-extension.zip dist",
+    "zip": "ln -s dist ingeniux-cms-live-viewer-extension && zip -r ingeniux-cms-live-viewer-extension.zip ingeniux-cms-live-viewer-extension -x '*.DS_Store' && rm ingeniux-cms-live-viewer-extension",
     "bundle": "pnpm build && pnpm zip"
   },
   "devDependencies": {
