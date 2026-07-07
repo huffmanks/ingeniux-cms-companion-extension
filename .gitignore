@@ -26,3 +26,9 @@ dist-ssr
 # Config files
 .webextrc
 .webextrc.*
+
+# Other
+*.zip
+*.tgz
+*.pem
+*.crx

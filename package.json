@@ -7,7 +7,11 @@
   "scripts": {
     "compile": "tsc --noEmit",
     "dev": "vite",
-    "build": "vite build"
+    "dev:chrome": "vite --browser chrome",
+    "dev:firefox": "vite --browser firefox",
+    "build": "pnpm compile && vite build",
+    "zip": "zip -r ingeniux-cms-live-viewer-extension.zip dist",
+    "bundle": "pnpm build && pnpm zip"
   },
   "devDependencies": {
     "@types/webextension-polyfill": "^0.12.5",
