@@ -1,3 +1,5 @@
+import browser from "webextension-polyfill";
+
 const CMS_SITE_BASE = "https://woffordcollege.ingeniuxondemand.com";
 const BUTTON_ID = "cms-live-view-button";
 
@@ -45,6 +47,36 @@ function getLiveSiteBase(): string {
   }
 }
 
+async function switchToFullView() {
+  const { autoFullView = true } = await browser.storage.sync.get("autoFullView");
+  if (!autoFullView) return;
+
+  const fullBtn = document.querySelector<HTMLSpanElement>('.viewButtons .viewButton[title="Full"]:not(.current)');
+  if (fullBtn) {
+    fullBtn.click();
+  }
+}
+
+async function openTreeView(isSitePath: boolean, isAssetPath: boolean) {
+  const { autoTreeView = true } = await browser.storage.sync.get("autoTreeView");
+  if (!autoTreeView) return;
+
+  let selector = "";
+
+  if (isSitePath) {
+    selector = 'utility-button .Icon[title="Site Tree Navigation"]:not(.current)';
+  } else if (isAssetPath) {
+    selector = 'utility-button .Icon[title="Assets Tree Navigation"]:not(.current)';
+  }
+
+  if (!selector) return;
+
+  const treeBtn = document.querySelector<HTMLSpanElement>(selector);
+  if (treeBtn) {
+    treeBtn.click();
+  }
+}
+
 let retryTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function handleUrlChange() {
@@ -56,6 +88,14 @@ function handleUrlChange() {
 
   const isSitePath = currentUrl.includes(`${CMS_SITE_BASE}/#/site`);
   const isAssetPath = currentUrl.includes(`${CMS_SITE_BASE}/#/assets`);
+
+  if (isSitePath) {
+    switchToFullView();
+  }
+
+  if (isSitePath || isAssetPath) {
+    openTreeView(isSitePath, isAssetPath);
+  }
 
   if (!isSitePath && !isAssetPath) return;
 
