@@ -3,13 +3,11 @@ import browser from "webextension-polyfill";
 interface StorageSchema {
   autoFullView: boolean;
   autoTreeView: boolean;
-  defaultLiveSite: string;
   siteMap: string;
 }
 
 const fullViewCheckbox = document.getElementById("auto-full-view") as HTMLInputElement | null;
 const treeViewCheckbox = document.getElementById("auto-tree-view") as HTMLInputElement | null;
-const defaultLiveSiteInput = document.getElementById("default-live-site") as HTMLInputElement | null;
 
 const visualMapContainer = document.getElementById("visual-map-container") as HTMLDivElement | null;
 const jsonMapContainer = document.getElementById("json-map-container") as HTMLDivElement | null;
@@ -114,7 +112,6 @@ async function loadSettings() {
   const res = await browser.storage.sync.get({
     autoFullView: false,
     autoTreeView: false,
-    defaultLiveSite: "",
     siteMap: "",
   });
 
@@ -122,7 +119,6 @@ async function loadSettings() {
 
   if (fullViewCheckbox) fullViewCheckbox.checked = settings.autoFullView;
   if (treeViewCheckbox) treeViewCheckbox.checked = settings.autoTreeView;
-  if (defaultLiveSiteInput) defaultLiveSiteInput.value = settings.defaultLiveSite;
   if (siteMapTextarea) siteMapTextarea.value = settings.siteMap;
 
   const currentMap = parseSiteMap(settings.siteMap);
@@ -162,10 +158,6 @@ fullViewCheckbox?.addEventListener("change", () => {
 
 treeViewCheckbox?.addEventListener("change", () => {
   browser.storage.sync.set({ autoTreeView: treeViewCheckbox.checked });
-});
-
-defaultLiveSiteInput?.addEventListener("change", () => {
-  browser.storage.sync.set({ defaultLiveSite: defaultLiveSiteInput.value.trim().replace(/\/+$/, "") });
 });
 
 siteMapTextarea?.addEventListener("change", () => {

@@ -1,10 +1,8 @@
 import browser from "webextension-polyfill";
 
 const BUTTON_ID = "cms-live-view-button";
-let retryTimeout: ReturnType<typeof setTimeout> | null = null;
 
 interface Settings {
-  defaultLiveSite: string;
   siteMap: Record<string, string>;
   autoFullView: boolean;
   autoTreeView: boolean;
@@ -12,7 +10,6 @@ interface Settings {
 
 async function getSettings(): Promise<Settings> {
   const data = await browser.storage.sync.get({
-    defaultLiveSite: "",
     siteMap: "",
     autoFullView: false,
     autoTreeView: false,
@@ -28,7 +25,6 @@ async function getSettings(): Promise<Settings> {
   }
 
   return {
-    defaultLiveSite: String(data.defaultLiveSite || ""),
     siteMap,
     autoFullView: Boolean(data.autoFullView),
     autoTreeView: Boolean(data.autoTreeView),
@@ -59,11 +55,7 @@ function openTreeView(isSitePath: boolean, isAssetPath: boolean) {
   }
 }
 
-function getLiveSiteBase(
-  selectElements: NodeListOf<HTMLSelectElement>,
-  siteMap: Record<string, string>,
-  defaultLiveSite: string,
-): string {
+function getLiveSiteBase(selectElements: NodeListOf<HTMLSelectElement>, siteMap: Record<string, string>): string {
   let activeSelectEl: HTMLSelectElement | null = null;
 
   for (const el of Array.from(selectElements)) {
@@ -87,16 +79,16 @@ function getLiveSiteBase(
 
   try {
     const targetData = JSON.parse(activeSelectEl.value);
-    return siteMap[targetData.name] || defaultLiveSite;
+    const targetName = targetData.name || "";
+
+    return siteMap[targetName] || "";
   } catch (e) {
     console.error("Failed to parse Ingeniux publishing target JSON:", e);
-    return defaultLiveSite;
+    return "";
   }
 }
 
 async function handleUrlChange() {
-  if (retryTimeout) clearTimeout(retryTimeout);
-
   if (!window.location.hostname.endsWith("ingeniuxondemand.com")) return;
 
   const settings = await getSettings();
@@ -121,12 +113,9 @@ async function handleUrlChange() {
     'select[dojoattachpoint="pubTargetsSelect"], select.pubTargetSelect',
   );
 
-  const liveSiteBase = getLiveSiteBase(selectElements, settings.siteMap, settings.defaultLiveSite);
+  const liveSiteBase = getLiveSiteBase(selectElements, settings.siteMap);
 
-  if (!liveSiteBase) {
-    retryTimeout = setTimeout(handleUrlChange, 100);
-    return;
-  }
+  if (!liveSiteBase) return;
 
   let targetUrl = "";
 
@@ -216,7 +205,7 @@ if (window === window.top) {
     const selectElements = document.querySelectorAll<HTMLSelectElement>(
       'select[dojoattachpoint="pubTargetsSelect"], select.pubTargetSelect',
     );
-    const currentLiveBase = getLiveSiteBase(selectElements, settings.siteMap, settings.defaultLiveSite);
+    const currentLiveBase = getLiveSiteBase(selectElements, settings.siteMap);
 
     if (!currentLiveBase || !existingButton.href.startsWith(currentLiveBase)) {
       handleUrlChange();
