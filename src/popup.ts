@@ -47,25 +47,25 @@ function createRow(targetValue = "", urlValue = "") {
   if (!mapRowsContainer) return;
 
   const row = document.createElement("div");
-  row.style.cssText = "display: flex; gap: 4px; align-items: center;";
+  row.className = "input-group input-group-sm";
 
   const targetInput = document.createElement("input");
   targetInput.type = "text";
+  targetInput.className = "form-control";
   targetInput.placeholder = "Target Name";
   targetInput.value = targetValue;
-  targetInput.style.cssText = "flex: 1; min-width: 0; padding: 4px; font-size: 12px;";
 
   const urlInput = document.createElement("input");
   urlInput.type = "url";
+  urlInput.className = "form-control";
   urlInput.placeholder = "https://...";
   urlInput.value = urlValue;
-  urlInput.style.cssText = "flex: 1.5; min-width: 0; padding: 4px; font-size: 12px;";
 
   const deleteBtn = document.createElement("button");
   deleteBtn.type = "button";
+  deleteBtn.className = "btn btn-outline-danger";
   deleteBtn.innerText = "×";
   deleteBtn.title = "Delete target";
-  deleteBtn.style.cssText = "padding: 2px 6px; font-size: 14px; cursor: pointer; line-height: 1;";
 
   deleteBtn.addEventListener("click", () => {
     row.remove();
@@ -102,7 +102,8 @@ function getMapFromRows(): Record<string, string> {
 
 function saveVisualMapToStorage() {
   const map = getMapFromRows();
-  const jsonString = JSON.stringify(map, null, 2);
+  const hasEntries = Object.keys(map).length > 0;
+  const jsonString = hasEntries ? JSON.stringify(map, null, 2) : "";
 
   if (siteMapTextarea) siteMapTextarea.value = jsonString;
   browser.storage.sync.set({ siteMap: jsonString });
@@ -119,9 +120,14 @@ async function loadSettings() {
 
   if (fullViewCheckbox) fullViewCheckbox.checked = settings.autoFullView;
   if (treeViewCheckbox) treeViewCheckbox.checked = settings.autoTreeView;
-  if (siteMapTextarea) siteMapTextarea.value = settings.siteMap;
 
   const currentMap = parseSiteMap(settings.siteMap);
+  const hasEntries = Object.keys(currentMap).length > 0;
+
+  if (siteMapTextarea) {
+    siteMapTextarea.value = hasEntries ? JSON.stringify(currentMap, null, 2) : "";
+  }
+
   renderRowsFromMap(currentMap);
 }
 
@@ -130,10 +136,15 @@ toggleJsonBtn?.addEventListener("click", () => {
 
   if (isJsonMode) {
     const map = getMapFromRows();
-    if (siteMapTextarea) siteMapTextarea.value = JSON.stringify(map, null, 2);
+    const hasEntries = Object.keys(map).length > 0;
 
-    if (visualMapContainer) visualMapContainer.style.display = "none";
-    if (jsonMapContainer) jsonMapContainer.style.display = "flex";
+    if (siteMapTextarea) {
+      siteMapTextarea.value = hasEntries ? JSON.stringify(map, null, 2) : "";
+    }
+
+    visualMapContainer?.classList.add("d-none");
+    jsonMapContainer?.classList.remove("d-none");
+    jsonMapContainer?.classList.add("d-flex");
     toggleJsonBtn.innerText = "Form View";
   } else {
     if (siteMapTextarea) {
@@ -142,8 +153,9 @@ toggleJsonBtn?.addEventListener("click", () => {
       saveVisualMapToStorage();
     }
 
-    if (jsonMapContainer) jsonMapContainer.style.display = "none";
-    if (visualMapContainer) visualMapContainer.style.display = "flex";
+    jsonMapContainer?.classList.add("d-none");
+    jsonMapContainer?.classList.remove("d-flex");
+    visualMapContainer?.classList.remove("d-none");
     toggleJsonBtn.innerText = "Raw JSON Mode";
   }
 });

@@ -1,8 +1,8 @@
 {
-  "name": "ingeniux-cms-live-viewer-extension",
-  "description": "Adds a View Live link in Ingeniux CMS, resolving the current asset and opening the correct publishing target.",
+  "name": "ingeniux-cms-companion-extension",
+  "description": "A browser companion for Ingeniux CMS with live-site navigation, view controls and useful CMS shortcuts.",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "compile": "tsc --noEmit",
@@ -10,7 +10,7 @@
     "dev:chrome": "vite --browser chrome",
     "dev:firefox": "vite --browser firefox",
     "build": "pnpm compile && vite build",
-    "zip": "ln -s dist ingeniux-cms-live-viewer-extension && zip -r ingeniux-cms-live-viewer-extension.zip ingeniux-cms-live-viewer-extension -x '*.DS_Store' && rm ingeniux-cms-live-viewer-extension",
+    "zip": "ln -s dist ingeniux-cms-companion-extension && zip -r ingeniux-cms-companion-extension.zip ingeniux-cms-companion-extension -x '*.DS_Store' && rm ingeniux-cms-companion-extension",
     "bundle": "pnpm build && pnpm zip"
   },
   "devDependencies": {

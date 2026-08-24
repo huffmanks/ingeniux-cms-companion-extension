@@ -8,27 +8,35 @@ interface Settings {
   autoTreeView: boolean;
 }
 
-async function getSettings(): Promise<Settings> {
-  const data = await browser.storage.sync.get({
-    siteMap: "",
-    autoFullView: false,
-    autoTreeView: false,
-  });
+async function getSettings(): Promise<Settings | null> {
+  try {
+    const data = await browser.storage.sync.get({
+      siteMap: "",
+      autoFullView: false,
+      autoTreeView: false,
+    });
 
-  let siteMap: Record<string, string> = {};
-  if (data.siteMap) {
-    try {
-      siteMap = typeof data.siteMap === "string" ? JSON.parse(data.siteMap) : data.siteMap;
-    } catch (e) {
-      console.error("Failed to parse siteMap storage JSON:", e);
+    let siteMap: Record<string, string> = {};
+    if (data.siteMap) {
+      try {
+        siteMap = typeof data.siteMap === "string" ? JSON.parse(data.siteMap) : data.siteMap;
+      } catch (e) {
+        console.error("Failed to parse siteMap storage JSON:", e);
+      }
     }
-  }
 
-  return {
-    siteMap,
-    autoFullView: Boolean(data.autoFullView),
-    autoTreeView: Boolean(data.autoTreeView),
-  };
+    return {
+      siteMap,
+      autoFullView: Boolean(data.autoFullView),
+      autoTreeView: Boolean(data.autoTreeView),
+    };
+  } catch (err) {
+    if (String(err).includes("Extension context invalidated")) {
+      return null;
+    }
+    console.error("Storage error:", err);
+    return null;
+  }
 }
 
 function switchToFullView() {
@@ -92,6 +100,8 @@ async function handleUrlChange() {
   if (!window.location.hostname.endsWith("ingeniuxondemand.com")) return;
 
   const settings = await getSettings();
+  if (!settings) return;
+
   const currentUrl = window.location.href;
 
   document.getElementById(BUTTON_ID)?.remove();
@@ -137,44 +147,61 @@ async function handleUrlChange() {
 }
 
 function injectButton(url: string) {
-  if (document.getElementById(BUTTON_ID)) return;
+  const existingBtn = document.getElementById(BUTTON_ID) as HTMLAnchorElement | null;
+  if (existingBtn) {
+    if (existingBtn.href !== url) existingBtn.href = url;
+    return;
+  }
 
-  const container = document.body;
-  if (!container) return;
+  const toolbarSections = document.querySelectorAll(
+    ".toolbarContainer .leftSideToolbar.buttonsContainer .toolbarSection",
+  );
+
+  if (toolbarSections.length === 0) return;
+
+  const targetContainer = toolbarSections[toolbarSections.length - 1];
 
   const btn = document.createElement("a");
   btn.id = BUTTON_ID;
   btn.href = url;
   btn.target = "_blank";
   btn.rel = "noopener noreferrer";
-  btn.innerText = "View Live";
+  btn.className = "newToolbarButton ngFlatToolbarButton";
+
+  const label = document.createElement("span");
+  label.className = "label";
+  label.innerText = "View Live";
+  btn.appendChild(label);
 
   Object.assign(btn.style, {
-    position: "fixed",
-    top: "60px",
-    right: "45px",
-    zIndex: "99999",
-    padding: "8px 16px",
-    backgroundColor: "rgb(81, 103, 138)",
-    color: "#fff",
+    display: "inline-block",
+    margin: "0px 2px 0px 4px",
+    padding: "8px 8px 0 8px",
+    lineHeight: "normal",
+    backgroundColor: "#314058",
+    color: "#ffffff",
     borderRadius: "3px",
+    border: "1px solid #283448",
     textDecoration: "none",
-    fontWeight: 300,
+    fontWeight: 400,
     fontSize: 14,
-    boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
     cursor: "pointer",
-    transition: "background-color 0.3s ease-in",
+    transition: "all 0.2s ease-in-out",
   });
 
   btn.addEventListener("mouseenter", () => {
-    btn.style.backgroundColor = "rgb(83, 172, 227)";
+    btn.style.backgroundColor = "#3d4d67";
+    btn.style.borderColor = "#4a5d7c";
+    btn.style.boxShadow = "0 2px 6px rgba(61, 78, 104, 0.4)";
   });
 
   btn.addEventListener("mouseleave", () => {
-    btn.style.backgroundColor = "rgb(81, 103, 138)";
+    btn.style.backgroundColor = "#314058";
+    btn.style.borderColor = "#283448";
+    btn.style.boxShadow = "none";
   });
 
-  container.appendChild(btn);
+  targetContainer.appendChild(btn);
 }
 
 if (window === window.top) {
@@ -184,7 +211,7 @@ if (window === window.top) {
 
   let lastUrl = location.href;
 
-  new MutationObserver(async () => {
+  const observer = new MutationObserver(async () => {
     const currentUrl = location.href;
     const existingButton = document.getElementById(BUTTON_ID) as HTMLAnchorElement | null;
 
@@ -200,7 +227,10 @@ if (window === window.top) {
     }
 
     const settings = await getSettings();
-    if (!settings) return;
+    if (!settings) {
+      observer.disconnect();
+      return;
+    }
 
     const selectElements = document.querySelectorAll<HTMLSelectElement>(
       'select[dojoattachpoint="pubTargetsSelect"], select.pubTargetSelect',
@@ -210,5 +240,7 @@ if (window === window.top) {
     if (!currentLiveBase || !existingButton.href.startsWith(currentLiveBase)) {
       handleUrlChange();
     }
-  }).observe(document, { subtree: true, childList: true, attributes: true });
+  });
+
+  observer.observe(document, { subtree: true, childList: true, attributes: true });
 }

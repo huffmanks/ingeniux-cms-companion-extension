@@ -5,7 +5,7 @@ function generateManifest() {
   const manifest = readJsonFile("src/manifest.json");
   const pkg = readJsonFile("package.json");
   return {
-    name: "Ingeniux CMS Live Viewer",
+    name: "Ingeniux CMS Companion Extension",
     description: pkg.description,
     version: pkg.version,
     ...manifest,
