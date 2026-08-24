@@ -5,6 +5,46 @@
   --cui-primary-hover-bg: color-mix(in srgb, var(--brand-primary) 85%, black);
   --cui-primary-active-bg: color-mix(in srgb, var(--brand-primary) 70%, black);
   --cui-focus-ring-color: rgba(var(--cui-primary-rgb), 0.25);
+  --cui-body-bg: #f4f6f8;
+}
+
+body {
+  background-color: var(--cui-body-bg) !important;
+}
+
+.card {
+  border: 1px solid #e1e6eb !important;
+  box-shadow: 0 4px 12px rgba(49, 64, 88, 0.08) !important;
+  overflow: hidden;
+}
+
+.card-header {
+  background-color: var(--brand-primary) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--brand-primary) 85%, black) !important;
+  padding: 0.75rem 1rem;
+}
+
+.section-panel {
+  background-color: #fafbfc;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.form-control {
+  border-color: #d8dee4;
+  background-color: #ffffff;
+}
+
+.form-control:focus,
+.form-check-input:focus {
+  border-color: var(--cui-primary);
+  box-shadow: 0 0 0 0.2rem var(--cui-focus-ring-color);
+}
+
+.form-check-input:checked {
+  background-color: var(--cui-primary);
+  border-color: var(--cui-primary);
 }
 
 .btn-primary {
@@ -30,17 +70,6 @@
 .btn-outline-danger {
   --cui-btn-hover-color: #fff;
   --cui-btn-active-color: #fff;
-}
-
-.form-control:focus,
-.form-check-input:focus {
-  border-color: var(--cui-primary);
-  box-shadow: 0 0 0 0.25rem var(--cui-focus-ring-color);
-}
-
-.form-check-input:checked {
-  background-color: var(--cui-primary);
-  border-color: var(--cui-primary);
 }
 
 .fs-7 {

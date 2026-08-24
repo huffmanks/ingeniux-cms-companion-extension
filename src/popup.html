@@ -11,38 +11,42 @@
   <title>Ingeniux CMS Companion Extension</title>
 </head>
 
-<body class="p-3" style="width: 380px; background-color: var(--cui-body-bg);">
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-primary text-white d-flex align-items-center gap-2">
-      <img src="/icon/1024.png" width="24" height="24" alt="Logo" class="rounded" />
-      <h6 class="mb-0 fw-semibold text-white">Ingeniux CMS Companion Extension</h6>
+<body class="p-3" style="width: 380px;">
+  <div class="card">
+    <div class="card-header d-flex align-items-center gap-2 py-2">
+      <img src="/icon/1024.png" width="20" height="20" alt="Logo" class="rounded" />
+      <h6 class="mb-0 fw-semibold text-white fs-7">Ingeniux CMS Companion</h6>
     </div>
-    <div class="card-body d-flex flex-column gap-3">
+    <div class="card-body d-flex flex-column gap-3 p-3">
       <section class="d-flex flex-column gap-2">
         <div class="d-flex justify-content-between align-items-center">
-          <span class="fw-semibold small text-body-secondary">Publishing Target Mapping</span>
+          <span class="fw-semibold text-uppercase text-secondary fs-7" style="letter-spacing: 0.03em;">Publishing Targets</span>
           <button id="toggle-json-mode" type="button" class="btn btn-outline-primary btn-sm py-0 px-2 fs-7"> Raw JSON Mode </button>
         </div>
-        <div id="visual-map-container" class="d-flex flex-column gap-2">
-          <div id="map-rows" class="d-flex flex-column gap-2"></div>
-          <button id="add-map-row" type="button" class="btn btn-primary btn-sm align-self-start"> + Add Target </button>
-        </div>
-        <div id="json-map-container" class="d-none flex-column gap-2">
-          <textarea id="site-map" class="form-control font-monospace fs-7" rows="6" placeholder='{
+        <div class="section-panel">
+          <div id="visual-map-container" class="d-flex flex-column gap-2">
+            <div id="map-rows" class="d-flex flex-column gap-2"></div>
+            <button id="add-map-row" type="button" class="btn btn-primary btn-sm align-self-start"> + Add Target </button>
+          </div>
+          <div id="json-map-container" class="d-none flex-column gap-2">
+            <textarea id="site-map" class="form-control font-monospace fs-7" rows="6" placeholder='{
   "Target 1": "https://example.com",
-  "Target 2": "https://example.com",
+  "Target 2": "https://example.com"
 }'></textarea>
+          </div>
         </div>
       </section>
-      <hr class="my-1 border-secondary-subtle" />
       <section class="d-flex flex-column gap-2">
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" role="switch" id="auto-full-view" />
-          <label class="form-check-label small fw-medium" for="auto-full-view"> Auto-switch to Full view </label>
-        </div>
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" role="switch" id="auto-tree-view" />
-          <label class="form-check-label small fw-medium" for="auto-tree-view"> Auto-open Tree view </label>
+        <span class="fw-semibold text-uppercase text-secondary fs-7" style="letter-spacing: 0.03em;">Automation</span>
+        <div class="section-panel d-flex flex-column gap-2">
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" role="switch" id="auto-full-view" />
+            <label class="form-check-label small fw-medium" for="auto-full-view"> Auto-switch to Full view </label>
+          </div>
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" role="switch" id="auto-tree-view" />
+            <label class="form-check-label small fw-medium" for="auto-tree-view"> Auto-open Tree view </label>
+          </div>
         </div>
       </section>
     </div>
