@@ -13,17 +13,30 @@
 <body>
   <img src="/icon/1024.png" />
   <h1>Ingeniux CMS Live Viewer</h1>
-  <!-- <label style="display: flex; flex-direction: column; gap: 4px;"> CMS Base URL <input type="url" id="cms-site-base" placeholder="https://cms.example.com" style="width: 100%; box-sizing: border-box; padding: 4px;" />
-  </label>
-  <label style="display: flex; flex-direction: column; gap: 4px;"> Default Live Site <input type="url" id="default-live-site" placeholder="https://www.example.com" style="width: 100%; box-sizing: border-box; padding: 4px;" />
-  </label>
-  <label style="display: flex; flex-direction: column; gap: 4px;"> Site Map (JSON) <textarea id="site-map" rows="5" placeholder='{\n  "Target Name": "https://www.example.com"\n}' style="width: 100%; box-sizing: border-box; padding: 4px; font-family: monospace; font-size: 11px;"></textarea>
-  </label>
-  <hr style="width: 100%; border: 0; border-top: 1px solid #ccc; margin: 4px 0;" /> -->
-  <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; margin-top: 12px; cursor: pointer;">
-    <input type="checkbox" id="auto-full-view" /> Auto-switch to Full view </label>
-  <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; margin-top: 8px; cursor: pointer;">
-    <input type="checkbox" id="auto-tree-view" /> Auto-open Tree view </label>
+  <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+    <label style="display: flex; flex-direction: column; gap: 4px;"> Default Live Site <input type="url" id="default-live-site" placeholder="https://www.example.com" style="width: 100%; box-sizing: border-box; padding: 4px;" />
+    </label>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-weight: 600;">Publishing Target Mapping</span>
+        <button id="toggle-json-mode" type="button" style="font-size: 11px; cursor: pointer; padding: 2px 6px;"> Raw JSON Mode </button>
+      </div>
+      <!-- Key-Value Pairs UI -->
+      <div id="visual-map-container" style="display: flex; flex-direction: column; gap: 6px;">
+        <div id="map-rows" style="display: flex; flex-direction: column; gap: 6px;"></div>
+        <button id="add-map-row" type="button" style="align-self: flex-start; padding: 3px 8px; font-size: 12px; cursor: pointer;"> + Add Target </button>
+      </div>
+      <!-- JSON Textarea Fallback UI -->
+      <div id="json-map-container" style="display: none; flex-direction: column; gap: 4px;">
+        <textarea id="site-map" rows="6" placeholder='{\n  "Target Name": "https://www.example.com"\n}' style="width: 100%; box-sizing: border-box; padding: 4px; font-family: monospace; font-size: 11px;"></textarea>
+      </div>
+    </div>
+    <hr style="width: 100%; border: 0; border-top: 1px solid #ccc; margin: 4px 0;" />
+    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+      <input type="checkbox" id="auto-full-view" /> Auto-switch to Full view </label>
+    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+      <input type="checkbox" id="auto-tree-view" /> Auto-open Tree view </label>
+  </div>
 </body>
 
 </html>

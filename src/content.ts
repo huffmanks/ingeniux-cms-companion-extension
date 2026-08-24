@@ -1,22 +1,69 @@
 import browser from "webextension-polyfill";
 
-const CMS_SITE_BASE = "https://woffordcollege.ingeniuxondemand.com";
 const BUTTON_ID = "cms-live-view-button";
+let retryTimeout: ReturnType<typeof setTimeout> | null = null;
 
-const SITE_MAP: Record<string, string> = {
-  "Wofford.edu": "https://www.wofford.edu",
-  "Wofford edu Staging": "https://woffordstaging.ingeniuxondemand.com",
-  myWofford: "https://my.wofford.edu",
-  "myWofford Staging": "https://mywoffordstaging.ingeniuxondemand.com",
-};
+interface Settings {
+  defaultLiveSite: string;
+  siteMap: Record<string, string>;
+  autoFullView: boolean;
+  autoTreeView: boolean;
+}
 
-const DEFAULT_LIVE_SITE = "https://www.wofford.edu";
+async function getSettings(): Promise<Settings> {
+  const data = await browser.storage.sync.get({
+    defaultLiveSite: "",
+    siteMap: "",
+    autoFullView: false,
+    autoTreeView: false,
+  });
 
-function getLiveSiteBase(): string {
-  const selectElements = document.querySelectorAll<HTMLSelectElement>(
-    'select[dojoattachpoint="pubTargetsSelect"], select.pubTargetSelect',
-  );
+  let siteMap: Record<string, string> = {};
+  if (data.siteMap) {
+    try {
+      siteMap = typeof data.siteMap === "string" ? JSON.parse(data.siteMap) : data.siteMap;
+    } catch (e) {
+      console.error("Failed to parse siteMap storage JSON:", e);
+    }
+  }
 
+  return {
+    defaultLiveSite: String(data.defaultLiveSite || ""),
+    siteMap,
+    autoFullView: Boolean(data.autoFullView),
+    autoTreeView: Boolean(data.autoTreeView),
+  };
+}
+
+function switchToFullView() {
+  const fullBtn = document.querySelector<HTMLSpanElement>('.viewButtons .viewButton[title="Full"]:not(.current)');
+  if (fullBtn) {
+    fullBtn.click();
+  }
+}
+
+function openTreeView(isSitePath: boolean, isAssetPath: boolean) {
+  let selector = "";
+
+  if (isSitePath) {
+    selector = 'utility-button .Icon[title="Site Tree Navigation"]:not(.current)';
+  } else if (isAssetPath) {
+    selector = 'utility-button .Icon[title="Assets Tree Navigation"]:not(.current)';
+  }
+
+  if (!selector) return;
+
+  const treeBtn = document.querySelector<HTMLSpanElement>(selector);
+  if (treeBtn) {
+    treeBtn.click();
+  }
+}
+
+function getLiveSiteBase(
+  selectElements: NodeListOf<HTMLSelectElement>,
+  siteMap: Record<string, string>,
+  defaultLiveSite: string,
+): string {
   let activeSelectEl: HTMLSelectElement | null = null;
 
   for (const el of Array.from(selectElements)) {
@@ -40,66 +87,41 @@ function getLiveSiteBase(): string {
 
   try {
     const targetData = JSON.parse(activeSelectEl.value);
-    return SITE_MAP[targetData.name] || DEFAULT_LIVE_SITE;
+    return siteMap[targetData.name] || defaultLiveSite;
   } catch (e) {
     console.error("Failed to parse Ingeniux publishing target JSON:", e);
-    return DEFAULT_LIVE_SITE;
+    return defaultLiveSite;
   }
 }
 
-async function switchToFullView() {
-  const { autoFullView = true } = await browser.storage.sync.get("autoFullView");
-  if (!autoFullView) return;
-
-  const fullBtn = document.querySelector<HTMLSpanElement>('.viewButtons .viewButton[title="Full"]:not(.current)');
-  if (fullBtn) {
-    fullBtn.click();
-  }
-}
-
-async function openTreeView(isSitePath: boolean, isAssetPath: boolean) {
-  const { autoTreeView = true } = await browser.storage.sync.get("autoTreeView");
-  if (!autoTreeView) return;
-
-  let selector = "";
-
-  if (isSitePath) {
-    selector = 'utility-button .Icon[title="Site Tree Navigation"]:not(.current)';
-  } else if (isAssetPath) {
-    selector = 'utility-button .Icon[title="Assets Tree Navigation"]:not(.current)';
-  }
-
-  if (!selector) return;
-
-  const treeBtn = document.querySelector<HTMLSpanElement>(selector);
-  if (treeBtn) {
-    treeBtn.click();
-  }
-}
-
-let retryTimeout: ReturnType<typeof setTimeout> | null = null;
-
-function handleUrlChange() {
+async function handleUrlChange() {
   if (retryTimeout) clearTimeout(retryTimeout);
 
+  if (!window.location.hostname.endsWith("ingeniuxondemand.com")) return;
+
+  const settings = await getSettings();
   const currentUrl = window.location.href;
 
   document.getElementById(BUTTON_ID)?.remove();
 
-  const isSitePath = currentUrl.includes(`${CMS_SITE_BASE}/#/site`);
-  const isAssetPath = currentUrl.includes(`${CMS_SITE_BASE}/#/assets`);
+  const isSitePath = currentUrl.includes("/#/site");
+  const isAssetPath = currentUrl.includes("/#/assets");
 
-  if (isSitePath) {
+  if (isSitePath && settings.autoFullView) {
     switchToFullView();
   }
 
-  if (isSitePath || isAssetPath) {
+  if ((isSitePath || isAssetPath) && settings.autoTreeView) {
     openTreeView(isSitePath, isAssetPath);
   }
 
   if (!isSitePath && !isAssetPath) return;
 
-  const liveSiteBase = getLiveSiteBase();
+  const selectElements = document.querySelectorAll<HTMLSelectElement>(
+    'select[dojoattachpoint="pubTargetsSelect"], select.pubTargetSelect',
+  );
+
+  const liveSiteBase = getLiveSiteBase(selectElements, settings.siteMap, settings.defaultLiveSite);
 
   if (!liveSiteBase) {
     retryTimeout = setTimeout(handleUrlChange, 100);
@@ -173,7 +195,7 @@ if (window === window.top) {
 
   let lastUrl = location.href;
 
-  new MutationObserver(() => {
+  new MutationObserver(async () => {
     const currentUrl = location.href;
     const existingButton = document.getElementById(BUTTON_ID) as HTMLAnchorElement | null;
 
@@ -188,7 +210,13 @@ if (window === window.top) {
       return;
     }
 
-    const currentLiveBase = getLiveSiteBase();
+    const settings = await getSettings();
+    if (!settings) return;
+
+    const selectElements = document.querySelectorAll<HTMLSelectElement>(
+      'select[dojoattachpoint="pubTargetsSelect"], select.pubTargetSelect',
+    );
+    const currentLiveBase = getLiveSiteBase(selectElements, settings.siteMap, settings.defaultLiveSite);
 
     if (!currentLiveBase || !existingButton.href.startsWith(currentLiveBase)) {
       handleUrlChange();
