@@ -159,7 +159,7 @@ function injectButton(url: string) {
 
   if (toolbarSections.length === 0) return;
 
-  const targetContainer = toolbarSections[toolbarSections.length - 1];
+  const targetContainer = toolbarSections[0];
 
   const btn = document.createElement("a");
   btn.id = BUTTON_ID;
