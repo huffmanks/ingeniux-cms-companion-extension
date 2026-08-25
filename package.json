@@ -11,7 +11,8 @@
     "dev:firefox": "vite --browser firefox",
     "build": "pnpm compile && vite build",
     "zip": "node -e \"const v=process.env.npm_package_version; const name='ingeniux-cms-companion-extension-v'+v; require('child_process').execSync(\\`ln -s dist \\${name} && zip -r \\${name}.zip \\${name} -x '*.DS_Store' && rm \\${name}\\`, {stdio: 'inherit'});\"",
-    "bundle": "pnpm build && pnpm zip"
+    "bundle": "pnpm build && pnpm zip",
+    "release": "node -e \"const v=process.env.npm_package_version; require('child_process').execSync(\\`gh release create v\\${v} ./ingeniux-cms-companion-extension-v\\${v}.zip --title \\\"Release v\\${v}\\\"\\`, {stdio: 'inherit'});\""
   },
   "devDependencies": {
     "@types/webextension-polyfill": "^0.12.5",
