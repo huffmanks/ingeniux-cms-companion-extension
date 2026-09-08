@@ -2,13 +2,32 @@ import browser from "webextension-polyfill";
 
 const BUTTON_ID = "cms-live-view-button";
 
+const SELECTORS = {
+  toolbarSection: ".toolbarContainer .leftSideToolbar.buttonsContainer .toolbarSection",
+  pubTargetSelect: 'select[dojoattachpoint="pubTargetsSelect"], select.pubTargetSelect',
+  fullViewButton: '.viewButtons .viewButton[title="Full"]:not(.current)',
+  siteTreeButton: 'utility-button .Icon[title="Site Tree Navigation"]:not(.current)',
+  assetTreeButton: 'utility-button .Icon[title="Assets Tree Navigation"]:not(.current)',
+} as const;
+
 interface Settings {
   siteMap: Record<string, string>;
   autoFullView: boolean;
   autoTreeView: boolean;
 }
 
-async function getSettings(): Promise<Settings | null> {
+interface PathState {
+  isSitePath: boolean;
+  isAssetPath: boolean;
+}
+
+let cachedSettings: Settings = {
+  siteMap: {},
+  autoFullView: false,
+  autoTreeView: false,
+};
+
+async function syncSettings(): Promise<Settings | null> {
   try {
     const data = await browser.storage.sync.get({
       siteMap: "",
@@ -25,11 +44,13 @@ async function getSettings(): Promise<Settings | null> {
       }
     }
 
-    return {
+    cachedSettings = {
       siteMap,
       autoFullView: Boolean(data.autoFullView),
       autoTreeView: Boolean(data.autoTreeView),
     };
+
+    return cachedSettings;
   } catch (err) {
     if (String(err).includes("Extension context invalidated")) {
       return null;
@@ -39,127 +60,86 @@ async function getSettings(): Promise<Settings | null> {
   }
 }
 
-function switchToFullView() {
-  const fullBtn = document.querySelector<HTMLSpanElement>('.viewButtons .viewButton[title="Full"]:not(.current)');
-  if (fullBtn) {
-    fullBtn.click();
-  }
+function getPathState(url: string): PathState {
+  return {
+    isSitePath: url.includes("/#/site"),
+    isAssetPath: url.includes("/#/assets"),
+  };
 }
 
-function openTreeView(isSitePath: boolean, isAssetPath: boolean) {
-  let selector = "";
+function applyAutoViewPreferences({ isSitePath, isAssetPath }: PathState) {
+  if (isSitePath && cachedSettings.autoFullView) {
+    document.querySelector<HTMLElement>(SELECTORS.fullViewButton)?.click();
+  }
+
+  if (!cachedSettings.autoTreeView) return;
 
   if (isSitePath) {
-    selector = 'utility-button .Icon[title="Site Tree Navigation"]:not(.current)';
+    document.querySelector<HTMLElement>(SELECTORS.siteTreeButton)?.click();
   } else if (isAssetPath) {
-    selector = 'utility-button .Icon[title="Assets Tree Navigation"]:not(.current)';
-  }
-
-  if (!selector) return;
-
-  const treeBtn = document.querySelector<HTMLSpanElement>(selector);
-  if (treeBtn) {
-    treeBtn.click();
+    document.querySelector<HTMLElement>(SELECTORS.assetTreeButton)?.click();
   }
 }
 
-function getLiveSiteBase(selectElements: NodeListOf<HTMLSelectElement>, siteMap: Record<string, string>): string {
-  let activeSelectEl: HTMLSelectElement | null = null;
-
+function findVisibleSelect(selectElements: NodeListOf<HTMLSelectElement>): HTMLSelectElement | null {
   for (const el of Array.from(selectElements)) {
     const rect = el.getBoundingClientRect();
     const isVisible = !!(el.offsetWidth || el.offsetHeight || rect.width || rect.height);
-    const isNotHidden = el.closest('[style*="display: none"], [style*="visibility: hidden"]') === null;
+    const isHidden = el.closest('[style*="display: none"], [style*="visibility: hidden"]') !== null;
 
-    if (isVisible && isNotHidden) {
-      activeSelectEl = el;
-      break;
-    }
+    if (isVisible && !isHidden) return el;
   }
 
-  if (!activeSelectEl && selectElements.length > 0) {
-    activeSelectEl = selectElements[0];
-  }
+  return selectElements[0] ?? null;
+}
 
-  if (!activeSelectEl || !activeSelectEl.value) {
-    return "";
-  }
+function getLiveSiteBase(siteMap: Record<string, string>): string {
+  const selectElements = document.querySelectorAll<HTMLSelectElement>(SELECTORS.pubTargetSelect);
+  const activeSelectEl = findVisibleSelect(selectElements);
+  const rawValue = activeSelectEl?.value ?? "";
+
+  if (!rawValue) return "";
+
+  if (!rawValue.startsWith("{")) return "";
 
   try {
-    const targetData = JSON.parse(activeSelectEl.value);
-    const targetName = targetData.name || "";
-
-    return siteMap[targetName] || "";
+    const targetData = JSON.parse(rawValue);
+    return siteMap[targetData.name || ""] || "";
   } catch (e) {
     console.error("Failed to parse Ingeniux publishing target JSON:", e);
     return "";
   }
 }
 
-async function handleUrlChange() {
-  if (!window.location.hostname.endsWith("ingeniuxondemand.com")) return;
-
-  const settings = await getSettings();
-  if (!settings) return;
-
-  const currentUrl = window.location.href;
-
-  document.getElementById(BUTTON_ID)?.remove();
-
-  const isSitePath = currentUrl.includes("/#/site");
-  const isAssetPath = currentUrl.includes("/#/assets");
-
-  if (isSitePath && settings.autoFullView) {
-    switchToFullView();
-  }
-
-  if ((isSitePath || isAssetPath) && settings.autoTreeView) {
-    openTreeView(isSitePath, isAssetPath);
-  }
-
-  if (!isSitePath && !isAssetPath) return;
-
-  const selectElements = document.querySelectorAll<HTMLSelectElement>(
-    'select[dojoattachpoint="pubTargetsSelect"], select.pubTargetSelect',
-  );
-
-  const liveSiteBase = getLiveSiteBase(selectElements, settings.siteMap);
-
-  if (!liveSiteBase) return;
-
-  let targetUrl = "";
-
+function buildLiveUrl(url: string, liveSiteBase: string, { isSitePath, isAssetPath }: PathState): string {
   if (isSitePath) {
-    const pageMatch = currentUrl.match(/(x\d+)/);
-    if (pageMatch) {
-      targetUrl = `${liveSiteBase}/${pageMatch[1]}.xml`;
-    }
-  } else if (isAssetPath) {
-    const assetMatch = currentUrl.match(/a_(\d+)/);
-    if (assetMatch) {
-      targetUrl = `${liveSiteBase}/a/${assetMatch[1]}`;
-    }
+    const pageMatch = url.match(/(x\d+)/);
+    return pageMatch ? `${liveSiteBase}/${pageMatch[1]}.xml` : "";
   }
 
-  if (targetUrl) {
-    injectButton(targetUrl);
+  if (isAssetPath) {
+    const assetMatch = url.match(/a_(\d+)/);
+    return assetMatch ? `${liveSiteBase}/a/${assetMatch[1]}` : "";
   }
+
+  return "";
 }
 
 function injectButton(url: string) {
+  const toolbarContainer = document.querySelector(SELECTORS.toolbarSection);
+  if (!toolbarContainer) return;
+
   const existingBtn = document.getElementById(BUTTON_ID) as HTMLAnchorElement | null;
+
   if (existingBtn) {
-    if (existingBtn.href !== url) existingBtn.href = url;
+    if (!toolbarContainer.contains(existingBtn)) {
+      toolbarContainer.appendChild(existingBtn);
+    }
+    if (existingBtn.href !== url) {
+      existingBtn.href = url;
+    }
     return;
   }
-
-  const toolbarSections = document.querySelectorAll(
-    ".toolbarContainer .leftSideToolbar.buttonsContainer .toolbarSection",
-  );
-
-  if (toolbarSections.length === 0) return;
-
-  const targetContainer = toolbarSections[0];
 
   const btn = document.createElement("a");
   btn.id = BUTTON_ID;
@@ -201,46 +181,69 @@ function injectButton(url: string) {
     btn.style.boxShadow = "none";
   });
 
-  targetContainer.appendChild(btn);
+  toolbarContainer.appendChild(btn);
+}
+
+function updateLiveViewButton(pathState: PathState) {
+  const liveSiteBase = getLiveSiteBase(cachedSettings.siteMap);
+  if (!liveSiteBase) return;
+
+  const targetUrl = buildLiveUrl(window.location.href, liveSiteBase, pathState);
+  if (targetUrl) injectButton(targetUrl);
+}
+
+function handleUrlChange() {
+  if (!window.location.hostname.endsWith("ingeniuxondemand.com")) return;
+
+  const pathState = getPathState(window.location.href);
+
+  if (!pathState.isSitePath && !pathState.isAssetPath) {
+    document.getElementById(BUTTON_ID)?.remove();
+    return;
+  }
+
+  applyAutoViewPreferences(pathState);
+  updateLiveViewButton(pathState);
 }
 
 if (window === window.top) {
-  window.addEventListener("hashchange", handleUrlChange);
+  syncSettings().then(() => {
+    handleUrlChange();
+  });
 
-  handleUrlChange();
-
-  let lastUrl = location.href;
-
-  const observer = new MutationObserver(async () => {
-    const currentUrl = location.href;
-    const existingButton = document.getElementById(BUTTON_ID) as HTMLAnchorElement | null;
-
-    if (currentUrl !== lastUrl) {
-      lastUrl = currentUrl;
-      handleUrlChange();
-      return;
-    }
-
-    if (!existingButton) {
-      handleUrlChange();
-      return;
-    }
-
-    const settings = await getSettings();
-    if (!settings) {
-      observer.disconnect();
-      return;
-    }
-
-    const selectElements = document.querySelectorAll<HTMLSelectElement>(
-      'select[dojoattachpoint="pubTargetsSelect"], select.pubTargetSelect',
-    );
-    const currentLiveBase = getLiveSiteBase(selectElements, settings.siteMap);
-
-    if (!currentLiveBase || !existingButton.href.startsWith(currentLiveBase)) {
-      handleUrlChange();
+  browser.storage.onChanged.addListener((_changes, areaName) => {
+    if (areaName === "sync") {
+      syncSettings().then(() => handleUrlChange());
     }
   });
 
-  observer.observe(document, { subtree: true, childList: true, attributes: true });
+  window.addEventListener("hashchange", handleUrlChange);
+
+  let lastUrl = location.href;
+  let isProcessing = false;
+
+  const observer = new MutationObserver(() => {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    try {
+      const currentUrl = location.href;
+
+      if (currentUrl !== lastUrl) {
+        lastUrl = currentUrl;
+        handleUrlChange();
+        return;
+      }
+
+      const pathState = getPathState(currentUrl);
+      if (!pathState.isSitePath && !pathState.isAssetPath) return;
+
+      applyAutoViewPreferences(pathState);
+      updateLiveViewButton(pathState);
+    } finally {
+      isProcessing = false;
+    }
+  });
+
+  observer.observe(document, { subtree: true, childList: true });
 }
