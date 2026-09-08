@@ -1,13 +1,15 @@
 import browser from "webextension-polyfill";
 
 interface StorageSchema {
+  siteMap: string;
   autoFullView: boolean;
   autoTreeView: boolean;
-  siteMap: string;
+  searchAssetCheckbox: boolean;
 }
 
 const fullViewCheckbox = document.getElementById("auto-full-view") as HTMLInputElement | null;
 const treeViewCheckbox = document.getElementById("auto-tree-view") as HTMLInputElement | null;
+const searchAssetCheckbox = document.getElementById("search-asset-checkbox") as HTMLInputElement | null;
 
 const visualMapContainer = document.getElementById("visual-map-container") as HTMLDivElement | null;
 const jsonMapContainer = document.getElementById("json-map-container") as HTMLDivElement | null;
@@ -113,6 +115,7 @@ async function loadSettings() {
   const res = await browser.storage.sync.get({
     autoFullView: false,
     autoTreeView: false,
+    searchAssetCheckbox: true,
     siteMap: "",
   });
 
@@ -120,6 +123,7 @@ async function loadSettings() {
 
   if (fullViewCheckbox) fullViewCheckbox.checked = settings.autoFullView;
   if (treeViewCheckbox) treeViewCheckbox.checked = settings.autoTreeView;
+  if (searchAssetCheckbox) searchAssetCheckbox.checked = settings.searchAssetCheckbox;
 
   const currentMap = parseSiteMap(settings.siteMap);
   const hasEntries = Object.keys(currentMap).length > 0;
@@ -170,6 +174,10 @@ fullViewCheckbox?.addEventListener("change", () => {
 
 treeViewCheckbox?.addEventListener("change", () => {
   browser.storage.sync.set({ autoTreeView: treeViewCheckbox.checked });
+});
+
+searchAssetCheckbox?.addEventListener("change", () => {
+  browser.storage.sync.set({ searchAssetCheckbox: searchAssetCheckbox.checked });
 });
 
 siteMapTextarea?.addEventListener("change", () => {

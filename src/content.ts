@@ -8,12 +8,14 @@ const SELECTORS = {
   fullViewButton: '.viewButtons .viewButton[title="Full"]:not(.current)',
   siteTreeButton: 'utility-button .Icon[title="Site Tree Navigation"]:not(.current)',
   assetTreeButton: 'utility-button .Icon[title="Assets Tree Navigation"]:not(.current)',
+  searchAssetCheckbox: 'input[dojoattachpoint="includeAssetsCheckbox"]:not(:checked)',
 } as const;
 
 interface Settings {
   siteMap: Record<string, string>;
   autoFullView: boolean;
   autoTreeView: boolean;
+  autoIncludeSearchAssets: boolean;
 }
 
 interface PathState {
@@ -25,6 +27,7 @@ let cachedSettings: Settings = {
   siteMap: {},
   autoFullView: false,
   autoTreeView: false,
+  autoIncludeSearchAssets: false,
 };
 
 async function syncSettings(): Promise<Settings | null> {
@@ -33,6 +36,7 @@ async function syncSettings(): Promise<Settings | null> {
       siteMap: "",
       autoFullView: false,
       autoTreeView: false,
+      autoIncludeSearchAssets: false,
     });
 
     let siteMap: Record<string, string> = {};
@@ -48,6 +52,7 @@ async function syncSettings(): Promise<Settings | null> {
       siteMap,
       autoFullView: Boolean(data.autoFullView),
       autoTreeView: Boolean(data.autoTreeView),
+      autoIncludeSearchAssets: Boolean(data.autoIncludeSearchAssets),
     };
 
     return cachedSettings;
@@ -78,6 +83,10 @@ function applyAutoViewPreferences({ isSitePath, isAssetPath }: PathState) {
     document.querySelector<HTMLElement>(SELECTORS.siteTreeButton)?.click();
   } else if (isAssetPath) {
     document.querySelector<HTMLElement>(SELECTORS.assetTreeButton)?.click();
+  }
+
+  if (cachedSettings.autoIncludeSearchAssets) {
+    document.querySelector<HTMLInputElement>(SELECTORS.searchAssetCheckbox)?.click();
   }
 }
 
