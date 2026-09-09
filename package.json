@@ -2,7 +2,7 @@
   "name": "ingeniux-cms-companion-extension",
   "description": "A browser companion for Ingeniux CMS with live-site navigation, view controls and useful CMS shortcuts.",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "compile": "tsc --noEmit",

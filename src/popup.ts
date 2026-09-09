@@ -4,7 +4,7 @@ interface StorageSchema {
   siteMap: string;
   autoFullView: boolean;
   autoTreeView: boolean;
-  searchAssetCheckbox: boolean;
+  autoIncludeSearchAssets: boolean;
 }
 
 const fullViewCheckbox = document.getElementById("auto-full-view") as HTMLInputElement | null;
@@ -115,7 +115,7 @@ async function loadSettings() {
   const res = await browser.storage.sync.get({
     autoFullView: false,
     autoTreeView: false,
-    searchAssetCheckbox: true,
+    autoIncludeSearchAssets: false,
     siteMap: "",
   });
 
@@ -123,7 +123,7 @@ async function loadSettings() {
 
   if (fullViewCheckbox) fullViewCheckbox.checked = settings.autoFullView;
   if (treeViewCheckbox) treeViewCheckbox.checked = settings.autoTreeView;
-  if (searchAssetCheckbox) searchAssetCheckbox.checked = settings.searchAssetCheckbox;
+  if (searchAssetCheckbox) searchAssetCheckbox.checked = settings.autoIncludeSearchAssets;
 
   const currentMap = parseSiteMap(settings.siteMap);
   const hasEntries = Object.keys(currentMap).length > 0;
@@ -177,7 +177,7 @@ treeViewCheckbox?.addEventListener("change", () => {
 });
 
 searchAssetCheckbox?.addEventListener("change", () => {
-  browser.storage.sync.set({ searchAssetCheckbox: searchAssetCheckbox.checked });
+  browser.storage.sync.set({ autoIncludeSearchAssets: searchAssetCheckbox.checked });
 });
 
 siteMapTextarea?.addEventListener("change", () => {
