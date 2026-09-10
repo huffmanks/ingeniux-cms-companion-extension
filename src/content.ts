@@ -30,6 +30,8 @@ let cachedSettings: Settings = {
   autoIncludeSearchAssets: false,
 };
 
+let settingsLoaded = false;
+
 async function syncSettings(): Promise<Settings | null> {
   try {
     const data = await browser.storage.sync.get({
@@ -55,6 +57,7 @@ async function syncSettings(): Promise<Settings | null> {
       autoIncludeSearchAssets: Boolean(data.autoIncludeSearchAssets),
     };
 
+    settingsLoaded = true;
     return cachedSettings;
   } catch (err) {
     if (String(err).includes("Extension context invalidated")) {
@@ -77,12 +80,12 @@ function applyAutoViewPreferences({ isSitePath, isAssetPath }: PathState) {
     document.querySelector<HTMLElement>(SELECTORS.fullViewButton)?.click();
   }
 
-  if (!cachedSettings.autoTreeView) return;
-
-  if (isSitePath) {
-    document.querySelector<HTMLElement>(SELECTORS.siteTreeButton)?.click();
-  } else if (isAssetPath) {
-    document.querySelector<HTMLElement>(SELECTORS.assetTreeButton)?.click();
+  if (cachedSettings.autoTreeView) {
+    if (isSitePath) {
+      document.querySelector<HTMLElement>(SELECTORS.siteTreeButton)?.click();
+    } else if (isAssetPath) {
+      document.querySelector<HTMLElement>(SELECTORS.assetTreeButton)?.click();
+    }
   }
 
   if (cachedSettings.autoIncludeSearchAssets) {
@@ -198,20 +201,28 @@ function updateLiveViewButton(pathState: PathState) {
   if (!liveSiteBase) return;
 
   const targetUrl = buildLiveUrl(window.location.href, liveSiteBase, pathState);
-  if (targetUrl) injectButton(targetUrl);
+  if (targetUrl) {
+    injectButton(targetUrl);
+    return true;
+  }
+  return false;
 }
 
-function handleUrlChange() {
+async function handleUrlChange() {
   if (!window.location.hostname.endsWith("ingeniuxondemand.com")) return;
 
+  if (!settingsLoaded) {
+    await syncSettings();
+  }
+
   const pathState = getPathState(window.location.href);
+  applyAutoViewPreferences(pathState);
 
   if (!pathState.isSitePath && !pathState.isAssetPath) {
     document.getElementById(BUTTON_ID)?.remove();
     return;
   }
 
-  applyAutoViewPreferences(pathState);
   updateLiveViewButton(pathState);
 }
 
@@ -245,10 +256,11 @@ if (window === window.top) {
       }
 
       const pathState = getPathState(currentUrl);
-      if (!pathState.isSitePath && !pathState.isAssetPath) return;
-
       applyAutoViewPreferences(pathState);
-      updateLiveViewButton(pathState);
+
+      if (pathState.isSitePath || pathState.isAssetPath) {
+        updateLiveViewButton(pathState);
+      }
     } finally {
       isProcessing = false;
     }
